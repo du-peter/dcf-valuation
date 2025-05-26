@@ -28,6 +28,8 @@ beta = 1.01                 # Beta
 stock = yf.Ticker(ticker)
 info = stock.info
 
+#%%
+
 # Try to safely get data, with fallbacks
 try:
     fcf_ttm = info.get("freeCashflow", info["marketCap"] * 0.05)
@@ -38,7 +40,8 @@ try:
     current_price = stock.info['regularMarketPrice']
     print(f"Using scraped values for {ticker}...")
 except:
-    raise ValueError("Could not fetch complete data from yfinance.")
+    raise ValueError("Could not fetch complete data from finance.")
+
 
 # FCF PROJECTIONS
 fcfs = []
@@ -47,21 +50,31 @@ for _ in range(projection_years):
     fcf *= (1 + growth_rate)
     fcfs.append(fcf)
 
+#%%
+
 # WACC
 
 equity = market_cap
 debt = debt
 value = equity + debt
 
+#%%
+
 # Cost of equity by CAPM
 cost_of_equity = risk_free + beta * (market_return - risk_free)
+
+#%%
 
 # WACC
 wacc = (equity / value) * cost_of_equity + (debt / value) * cost_of_debt * (1 - tax_rate)
 
+#%%
+
 # TV CALCULATIONS
 # PERP METHOD
 tv_perp = fcfs[-1] * (1 + terminal_growth) / (wacc - terminal_growth)
+
+#%%
 
 # EXIT MULTIPLE METHOD
 if ebitda_ttm:
@@ -70,17 +83,25 @@ if ebitda_ttm:
 else:
     tv_exit = tv_perp
 
+#%%
+
 # TV AVERAGED OUT
 tv_avg = (tv_perp + tv_exit) / 2
+
+#%%
 
 # DISCOUNTING
 discounted_fcfs = [fcfs[i] / ((1 + wacc) ** (i + 1)) for i in range(projection_years)]
 discounted_tv = tv_avg / ((1 + wacc) ** projection_years)
 
+#%%
+
 # VALUATIONS FINAL
 enterprise_value = sum(discounted_fcfs) + discounted_tv
 equity_value = enterprise_value - debt
 share_price = equity_value / shares_outstanding
+
+#%%
 
 # OUTPUT RESULTS
 print("--- WACC CALCULATION ---")
